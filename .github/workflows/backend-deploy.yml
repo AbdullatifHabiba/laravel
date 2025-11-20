@@ -56,8 +56,15 @@ jobs:
 
           # Clone or update repository
           echo "=== Setting up repository ==="
-          rm -rf .git # Remove existing git repository if it exists
-          git clone https://github.com/AbdullatifHabiba/laravel.git .
+          if [ -d .git ]; then
+            echo "Repository exists, pulling latest changes..."
+            git fetch origin
+            git reset --hard origin/12.x
+            git clean -fd
+          else
+            echo "Cloning repository..."
+            git clone https://github.com/AbdullatifHabiba/laravel.git .
+          fi
 
           # Verify PHP version
           echo "=== Verifying PHP version ==="
@@ -74,14 +81,26 @@ jobs:
           echo "=== Setting up environment ==="
           if [ ! -f .env ]; then
             cp .env.example .env
-            sed -i 's/DB_HOST=127.0.0.1/DB_HOST=${{ secrets.DB_HOST }}/g' .env
             php8.3 artisan key:generate
           fi
+          
+          # Update database credentials
+          sed -i "s/DB_HOST=.*/DB_HOST=${{ secrets.DB_HOST }}/g" .env
+          sed -i "s/DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/g" .env
+          sed -i "s/DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/g" .env
+          sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/g" .env
 
           # Set proper permissions
           echo "=== Setting permissions ==="
-          sudo chown -R ubuntu:ubuntu ~/laravel-app
-          sudo chmod -R 755 storage bootstrap/cache
+          sudo chown -R www-data:www-data ~/laravel-app/storage ~/laravel-app/bootstrap/cache
+          sudo chmod -R 775 ~/laravel-app/storage ~/laravel-app/bootstrap/cache
+
+          # Clear old cache
+          echo "=== Clearing old cache ==="
+          php8.3 artisan cache:clear
+          php8.3 artisan config:clear
+          php8.3 artisan route:clear
+          php8.3 artisan view:clear
 
           # Run migrations
           echo "=== Running database migrations ==="
@@ -92,5 +111,9 @@ jobs:
           php8.3 artisan config:cache
           php8.3 artisan route:cache
           php8.3 artisan view:cache
+
+          # Restart PHP-FPM
+          echo "=== Restarting PHP-FPM ==="
+          sudo systemctl restart php8.3-fpm
 
           echo "=== Deployment completed successfully ==="
