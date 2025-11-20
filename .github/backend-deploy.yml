@@ -35,7 +35,7 @@ jobs:
             # For demo purposes, we clone the laravel repo if empty, or assume it's already set up
             # In a real scenario, we might rsync the code from the runner or git clone
             git clone https://github.com/laravel/laravel.git . || true
-            git pull origin main
+            git pull origin main 
           fi
 
           # Install dependencies
@@ -50,4 +50,3 @@ jobs:
 
           # Run migrations
           php artisan migrate --force
-workflows/backend-deploy.yml
