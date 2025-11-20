@@ -18,10 +18,13 @@ jobs:
         username: ubuntu
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Ensure dependencies are installed
-          if ! command -v php &> /dev/null; then
+          # Add PPA for newer PHP versions (Ubuntu 22.04 defaults to 8.1, Laravel needs 8.2+)
+          if ! command -v php8.3 &> /dev/null; then
             sudo apt-get update
-            sudo apt-get install -y php php-cli php-mbstring php-xml php-bcmath php-mysql composer unzip
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository ppa:ondrej/php -y
+            sudo apt-get update
+            sudo apt-get install -y php8.3 php8.3-cli php8.3-mbstring php8.3-xml php8.3-bcmath php8.3-mysql php8.3-curl php8.3-zip unzip
           fi
 
           # Create directory if not exists
@@ -30,23 +33,24 @@ jobs:
 
           # Clone or Pull
           if [ -d ".git" ]; then
-            git pull origin main
+            # Reset to match remote to avoid conflicts
+            git fetch origin main
+            git reset --hard origin/main
           else
-            # For demo purposes, we clone the laravel repo if empty, or assume it's already set up
-            # In a real scenario, we might rsync the code from the runner or git clone
-            git clone https://github.com/laravel/laravel.git . || true
-            git pull origin main 
+            # Clone if empty
+            git clone https://github.com/laravel/laravel.git .
           fi
 
           # Install dependencies
           composer install --no-interaction --prefer-dist --optimize-autoloader
 
-          # Copy .env example if not exists (should be managed by secrets in real life)
+          # Copy .env example if not exists
           if [ ! -f .env ]; then
             cp .env.example .env
-            php artisan key:generate
-            # Update DB credentials in .env here using sed or similar if needed
+            php8.3 artisan key:generate
+            # In a real scenario, we would replace DB credentials here using secrets
+            # sed -i 's/DB_HOST=127.0.0.1/DB_HOST=${{ secrets.DB_HOST }}/g' .env
           fi
 
           # Run migrations
-          php artisan migrate --force
+          php8.3 artisan migrate --force
