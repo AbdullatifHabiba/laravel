@@ -93,7 +93,7 @@ jobs:
           
           # Debug: Show which secrets are being used (values will be masked in logs)
           echo "=== Configuring database credentials ===" 
-          echo "DB_HOST is set: ${{ secrets.DB_HOST != '' }}"
+          echo "DB_HOST is set: ${{ secrets.DB_HOST != '' }}" 
           echo "DB_DATABASE is set: ${{ secrets.DB_DATABASE != '' }}"
           echo "DB_USERNAME is set: ${{ secrets.DB_USERNAME != '' }}"
           echo "DB_PASSWORD is set: ${{ secrets.DB_PASSWORD != '' }}"
