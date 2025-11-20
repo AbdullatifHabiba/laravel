@@ -73,7 +73,7 @@ jobs:
             git clone https://github.com/AbdullatifHabiba/laravel.git .
           fi
 
-          # Verify PHP version
+          # Verify PHP version 
           echo "=== Verifying PHP version ==="
           php8.3 --version
 
