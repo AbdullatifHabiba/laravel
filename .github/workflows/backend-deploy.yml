@@ -114,7 +114,7 @@ jobs:
           php8.3 artisan route:clear || true
           php8.3 artisan view:clear || true
 
-          # Run migrations
+          # Run migrations 
           echo "=== Running database migrations ==="
           php8.3 artisan migrate --force
 
