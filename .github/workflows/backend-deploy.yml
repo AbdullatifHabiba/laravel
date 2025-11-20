@@ -18,39 +18,85 @@ jobs:
         username: ubuntu
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Add PPA for newer PHP versions (Ubuntu 22.04 defaults to 8.1, Laravel needs 8.2+)
-          if ! command -v php8.3 &> /dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y software-properties-common
-            sudo add-apt-repository ppa:ondrej/php -y
-            sudo apt-get update
-            sudo apt-get install -y php8.3 php8.3-cli php8.3-mbstring php8.3-xml php8.3-bcmath php8.3-mysql php8.3-curl php8.3-zip unzip
+          set -e  # Exit on any error
+          
+          echo "=== Starting deployment process ==="
+          
+          # Install PHP 8.3 and required extensions
+          echo "=== Installing PHP 8.3 and dependencies ==="
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:ondrej/php -y
+          sudo apt-get update
+          sudo apt-get install -y \
+            php8.3 \
+            php8.3-cli \
+            php8.3-fpm \
+            php8.3-mbstring \
+            php8.3-xml \
+            php8.3-bcmath \
+            php8.3-mysql \
+            php8.3-curl \
+            php8.3-zip \
+            php8.3-gd \
+            php8.3-intl \
+            unzip \
+            git \
+            nginx
+
+          # Install Composer
+          echo "=== Installing Composer ==="
+          if ! command -v composer &> /dev/null; then
+            curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
           fi
 
           # Create directory if not exists
           mkdir -p ~/laravel-app
           cd ~/laravel-app
 
-          # Clone or Pull
+          # Clone or update repository
+          echo "=== Setting up repository ==="
           if [ -d ".git" ]; then
-            # Reset to match remote to avoid conflicts
-            git fetch origin main
+            echo "Repository exists, pulling latest changes..."
+            git fetch --all
             git reset --hard origin/main
+            git pull origin main
           else
-            # Clone if empty
-            git clone https://github.com/laravel/laravel.git .
+            echo "Cloning repository..."
+            git clone https://github.com/AbdullatifHabiba/laravel.git .
           fi
 
-          # Install dependencies
-          composer install --no-interaction --prefer-dist --optimize-autoloader
+          # Verify PHP version
+          echo "=== Verifying PHP version ==="
+          php8.3 --version
 
-          # Copy .env example if not exists
+          # Set correct PHP version for CLI
+          sudo update-alternatives --set php /usr/bin/php8.3
+
+          # Install dependencies
+          echo "=== Installing Composer dependencies ==="
+          composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+          # Setup environment file
+          echo "=== Setting up environment ==="
           if [ ! -f .env ]; then
             cp .env.example .env
             php8.3 artisan key:generate
-            # In a real scenario, we would replace DB credentials here using secrets
-            # sed -i 's/DB_HOST=127.0.0.1/DB_HOST=${{ secrets.DB_HOST }}/g' .env
           fi
 
+          # Set proper permissions
+          echo "=== Setting permissions ==="
+          sudo chown -R ubuntu:ubuntu ~/laravel-app
+          sudo chmod -R 755 storage bootstrap/cache
+
           # Run migrations
+          echo "=== Running database migrations ==="
           php8.3 artisan migrate --force
+
+          # Cache configuration
+          echo "=== Caching configuration ==="
+          php8.3 artisan config:cache
+          php8.3 artisan route:cache
+          php8.3 artisan view:cache
+
+          echo "=== Deployment completed successfully ==="
