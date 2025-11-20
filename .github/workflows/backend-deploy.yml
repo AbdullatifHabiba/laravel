@@ -89,23 +89,28 @@ jobs:
             php8.3 artisan key:generate
           fi
           
-          # Update database credentials
+          # Update database credentials to use MySQL (not SQLite)
+          sed -i "s/DB_CONNECTION=.*/DB_CONNECTION=mysql/g" .env
           sed -i "s/DB_HOST=.*/DB_HOST=${{ secrets.DB_HOST }}/g" .env
           sed -i "s/DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/g" .env
           sed -i "s/DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/g" .env
           sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/g" .env
 
-          # Set proper permissions
+          # Set proper permissions (must be done as current user, not www-data)
           echo "=== Setting permissions ==="
-          sudo chown -R www-data:www-data ~/laravel-app/storage ~/laravel-app/bootstrap/cache
-          sudo chmod -R 775 ~/laravel-app/storage ~/laravel-app/bootstrap/cache
+          chmod -R 775 ~/laravel-app/storage ~/laravel-app/bootstrap/cache
+          
+          # Create log file if it doesn't exist
+          mkdir -p ~/laravel-app/storage/logs
+          touch ~/laravel-app/storage/logs/laravel.log
+          chmod 775 ~/laravel-app/storage/logs/laravel.log
 
           # Clear old cache
           echo "=== Clearing old cache ==="
-          php8.3 artisan cache:clear
-          php8.3 artisan config:clear
-          php8.3 artisan route:clear
-          php8.3 artisan view:clear
+          php8.3 artisan cache:clear || true
+          php8.3 artisan config:clear || true
+          php8.3 artisan route:clear || true
+          php8.3 artisan view:clear || true
 
           # Run migrations
           echo "=== Running database migrations ==="
