@@ -58,11 +58,14 @@ jobs:
           echo "=== Setting up repository ==="
           if [ -d .git ]; then
             echo "Repository exists, pulling latest changes..."
-            git fetch origin
-            git reset --hard origin/12.x
+            git fetch origin main
+            git reset --hard origin/main
             git clean -fd
           else
             echo "Cloning repository..."
+            # Remove any existing files first
+            rm -rf ./*
+            rm -rf ./.git
             git clone https://github.com/AbdullatifHabiba/laravel.git .
           fi
 
