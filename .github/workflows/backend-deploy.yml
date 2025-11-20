@@ -91,12 +91,24 @@ jobs:
             php8.3 artisan key:generate
           fi
           
+          # Debug: Show which secrets are being used (values will be masked in logs)
+          echo "=== Configuring database credentials ==="
+          echo "DB_HOST is set: ${{ secrets.DB_HOST != '' }}"
+          echo "DB_DATABASE is set: ${{ secrets.DB_DATABASE != '' }}"
+          echo "DB_USERNAME is set: ${{ secrets.DB_USERNAME != '' }}"
+          echo "DB_PASSWORD is set: ${{ secrets.DB_PASSWORD != '' }}"
+          
           # Update database credentials to use MySQL (not SQLite)
           sed -i "s/DB_CONNECTION=.*/DB_CONNECTION=mysql/g" .env
           sed -i "s/DB_HOST=.*/DB_HOST=${{ secrets.DB_HOST }}/g" .env
           sed -i "s/DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/g" .env
           sed -i "s/DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/g" .env
           sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/g" .env
+          
+          # Debug: Show .env file (with password masked)
+          echo "=== Database configuration in .env ==="
+          grep "^DB_" .env | grep -v "DB_PASSWORD"
+          echo "DB_PASSWORD=***MASKED***"
 
           # Set proper permissions (must be done as current user, not www-data)
           echo "=== Setting permissions ==="
