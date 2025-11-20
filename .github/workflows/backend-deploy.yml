@@ -58,6 +58,8 @@ jobs:
           echo "=== Setting up repository ==="
           if [ -d .git ]; then
             echo "Repository exists, pulling latest changes..."
+            # Fix permissions before git operations
+            chmod -R u+w ~/laravel-app
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
