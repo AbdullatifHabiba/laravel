@@ -56,15 +56,8 @@ jobs:
 
           # Clone or update repository
           echo "=== Setting up repository ==="
-          if [ -d ".git" ]; then
-            echo "Repository exists, pulling latest changes..."
-            git fetch --all
-            git reset --hard origin/main
-            git pull origin main
-          else
-            echo "Cloning repository..."
-            git clone https://github.com/AbdullatifHabiba/laravel.git .
-          fi
+          rm -rf .git # Remove existing git repository if it exists
+          git clone https://github.com/AbdullatifHabiba/laravel.git .
 
           # Verify PHP version
           echo "=== Verifying PHP version ==="
@@ -81,6 +74,7 @@ jobs:
           echo "=== Setting up environment ==="
           if [ ! -f .env ]; then
             cp .env.example .env
+            sed -i 's/DB_HOST=127.0.0.1/DB_HOST=${{ secrets.DB_HOST }}/g' .env
             php8.3 artisan key:generate
           fi
 
